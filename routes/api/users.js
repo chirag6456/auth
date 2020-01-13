@@ -3,14 +3,15 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const keys = require("../../config/keys");
+
+
 // Load input validation
 const validateRegisterInput = require("../../validation/register");
 const validateLoginInput = require("../../validation/login");
 // Load User model
 const User = require("../../models/User");
-// @route POST api/users/register
-// @desc Register user
-// @access Public
+const SportsSchema = require("../../models/Sports");
+
 router.post("/register", (req, res) => {
     // Form validation
   const { errors, isValid } = validateRegisterInput(req.body);
@@ -42,9 +43,6 @@ router.post("/register", (req, res) => {
     });
   });
 
-  // @route POST api/users/login
-// @desc Login user and return JWT token
-// @access Public
 router.post("/login", (req, res) => {
     // Form validation
   const { errors, isValid } = validateLoginInput(req.body);
@@ -69,17 +67,17 @@ router.post("/login", (req, res) => {
             id: user.id,
             name: user.name
           };
-  // Sign token
+    // Sign token
           jwt.sign(
             payload,
             keys.secretOrKey,
             {
-              expiresIn: 31556926 // 1 year in seconds
+              expiresIn: 31556926
             },
             (err, token) => {
               res.json({
                 success: true,
-                token: "Bearer " + token
+                token: token
               });
             }
           );
@@ -92,4 +90,11 @@ router.post("/login", (req, res) => {
     });
   });
 
+
+  router.post("/get", (req, res) => {
+      res.json();
+  })
+
   module.exports = router;
+
+
