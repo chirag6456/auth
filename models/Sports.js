@@ -13,8 +13,7 @@ const SportsSchema = new Schema({
   type : {
     type : String,
     required : true
-  }
-});
-
+  },
+  game : [{type : mongoose.Schema.Types.ObjectId, ref: 'sports' }]})
 module.exports = Sports = mongoose.model("sports", SportsSchema);
 

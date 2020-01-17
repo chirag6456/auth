@@ -3,7 +3,7 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const keys = require("../../config/keys");
-
+const crypto = require("crypto");
 
 // Load input validation
 const validateRegisterInput = require("../../validation/register");
@@ -119,7 +119,7 @@ router.post("/login", (req, res) => {
             payload,
             keys.secretOrKey,
             {
-              expiresIn: 31556926
+              expiresIn: 31556926  //1 year
             }
           );
           Sports.find((err, sports) => {
@@ -134,6 +134,17 @@ router.post("/login", (req, res) => {
     });
   });
 
+  router.post("/reset", (req, res) =>
+  {
+    const email = req.body.email;
+    User.findOne({ email} ).then( user => {
+      if(!user)
+        {
+          return res.status(404).send("Email doesn't exist");
+        }
+      
+    })
+  })
   module.exports = router;
 
 
