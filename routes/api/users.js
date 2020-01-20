@@ -6,15 +6,17 @@ const keys = require("../../config/keys");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const async = require("async");
+
 // Load input validation
 const validateRegisterInput = require("../../validation/register");
 const validateLoginInput = require("../../validation/login");
+
 // Load models
 const User = require("../../models/User");
 const Sports = require("../../models/Sports");
 
 router.post("/register", (req, res) => {
-    // Form validation
+  // Form validation
   const { errors, isValid } = validateRegisterInput(req.body);
   // Check validation
     if (!isValid) {
@@ -34,10 +36,7 @@ router.post("/register", (req, res) => {
           bcrypt.hash(newUser.password, salt, (err, hash) => {
             if (err) throw err;
             newUser.password = hash;
-            newUser
-              .save()
-              .then(user => res.json(user))
-              .catch(err => console.log(err));
+            newUser.save().then(user => res.json(user)).catch(err => console.log(err));
           });
         });
       }
@@ -45,14 +44,14 @@ router.post("/register", (req, res) => {
   });
 
 router.post("/login", (req, res) => {
-    // Form validation
+  // Form validation
   const { errors, isValid } = validateLoginInput(req.body);
   // Check validation
     if (!isValid) {
       return res.status(400).json(errors);
     }
   const email = req.body.email;
-    const password = req.body.password;
+  const password = req.body.password;
   // Find user by email
     User.findOne({ email }).then(user => {
       // Check if user exists
@@ -93,14 +92,14 @@ router.post("/login", (req, res) => {
 
 
   router.post("/get", (req, res) => {
-    // Form validation
+  // Form validation
   const { errors, isValid } = validateLoginInput(req.body);
   // Check validation
     if (!isValid) {
       return res.status(400).json(errors);
     }
   const email = req.body.email;
-    const password = req.body.password;
+  const password = req.body.password;
   // Find user by email
     User.findOne({ email }).then(user => {
       // Check if user exists
@@ -148,7 +147,7 @@ router.post("/login", (req, res) => {
         User.findOne({ email : req.body.email}, function(err, user) {
           if( !user )
           {
-            return res.send("No user found");
+            return res.send("User not found");
           }
 
           user.resetPasswordToken = token;
