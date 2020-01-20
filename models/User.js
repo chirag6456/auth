@@ -8,7 +8,8 @@ const UserSchema = new Schema({
   },
   email: {
     type: String,
-    required: true
+    required: true,
+    unique : true
   },
   password: {
     type: String,
@@ -17,6 +18,14 @@ const UserSchema = new Schema({
   date: {
     type: Date,
     default: Date.now
+  },
+  resetPasswordToken:
+  {
+    type: String
+  },
+  resetPasswordDate:
+  {
+    type : Date
   }
 });
 module.exports = User = mongoose.model("users", UserSchema);

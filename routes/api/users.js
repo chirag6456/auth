@@ -4,7 +4,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const keys = require("../../config/keys");
 const crypto = require("crypto");
-
+const nodemailer = require("nodemailer");
+const async = require("async");
 // Load input validation
 const validateRegisterInput = require("../../validation/register");
 const validateLoginInput = require("../../validation/login");
@@ -134,17 +135,133 @@ router.post("/login", (req, res) => {
     });
   });
 
-  router.post("/reset", (req, res) =>
+  router.post('/forgot', (req, res, next) =>
   {
-    const email = req.body.email;
-    User.findOne({ email} ).then( user => {
-      if(!user)
-        {
-          return res.status(404).send("Email doesn't exist");
+    async.waterfall([
+      function(done){
+        crypto.randomBytes(30, function(err, buf){
+          var token = buf.toString('hex');
+          done(err, token);
+        });
+      },
+      function(token, done){
+        User.findOne({ email : req.body.email}, function(err, user) {
+          if( !user )
+          {
+            return res.send("No user found");
+          }
+
+          user.resetPasswordToken = token;
+          user.resetPasswordDate = Date.now() + 3600000;
+
+          user.save(function(err){
+            done(err, token, user);
+          });
+        });
+      },
+      function(token, user, done){
+        var smtptransport = nodemailer.createTransport(
+          {
+            host: 'smtp.ethereal.email',
+            port: 587,
+            auth: {
+                    user: 'kraig96@ethereal.email',
+                    pass: 'zzJz6VaAQEPU2x7JPa'
+                  }
+          }
+        );
+
+        var mailOptions = {
+          to : user.email,
+          from : 'kraig96@ethereal.email',
+          subject : 'NodeJS forgot password',
+          text : 'Click the link to reset password.' + 'http://' + req.headers.host + '/api/users/reset/' + token 
+        };
+
+        smtptransport.sendMail(mailOptions, function(err){
+          console.log('mail sent');
+          done(err, 'done');
+          res.json({message : "Mail sent to your email id"});
+        });
+      }
+    ], function(err) {
+      if(err) return next(err);
+    });  
+  });
+
+
+  router.post('/reset/:token', function(req, res) {
+        
+        User.findOne({resetPasswordToken : req.params.token}).then(user => {
+          
+          if(!user)
+            return res.send("Error");
+          
+          var pass = req.body.password;
+          
+          bcrypt.genSalt(10, function(err, salt){
+            if(err){
+              throw err;
+            }
+            else{
+              bcrypt.hash(pass, salt, function(err, hash){
+                if(err){
+                  throw err;
+                }
+                else{
+                  User.findOneAndUpdate({resetPasswordToken : req.params.token}, { "$set" : { "password" : hash, resetPasswordDate : undefined, resetPasswordToken : undefined}}).exec(function(err, user){
+                    if(err) {
+                        console.log(err);
+                        res.status(500).send(err);
+                    } else {
+                             res.status(200).json({message : "Password changed successfully."});
+                    }
+                 });
+              }});
+            }
+          });
+          
+        
+        })
+      });
+
+    router.post('/changepass', (req, res) =>{
+      const email = req.body.email;
+      var password = req.body.password;
+      const newpassword = req.body.newpassword;
+
+      const{ errors, isValid} = validateLoginInput(req.body);
+
+      if(!isValid)
+        return res.status(404).json(errors);
+      User.findOne({email}).then(user => {
+        if(!user)
+          return res.status(404).json({message : "User not found"});
+        bcrypt.compare(password, user.password).then(isMatch =>{
+          if(isMatch){
+            bcrypt.genSalt(10, function(err, salt){
+              if(err){
+                throw err;
+              }
+              else{
+                bcrypt.hash(newpassword, salt, function(err, hash){
+                  if(err){
+                    throw err;
+                  }
+                  else{
+                    User.findOneAndUpdate({email}, { "$set" : {"password" : hash}});
+                    res.json({message : "Update Success"});
+                  }
+                })
+              }
+            })
+          }
+          else
+            return res.json({message : "Error"});
         }
-      
-    })
-  })
-  module.exports = router;
+        
+      )
+    })});
+    module.exports = router;
 
 
